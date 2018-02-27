@@ -1,13 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using System.Windows.Forms;
-using OpenHardwareMonitor;
 using OpenHardwareMonitor.Hardware;
 
 namespace TemperatureMonitor
@@ -20,27 +14,57 @@ namespace TemperatureMonitor
             InitializeComponent();
             thisComputer = new Computer() { CPUEnabled = true };
             thisComputer.Open();
+
+            Thread refresh = new Thread(refreshTemp);
+            refresh.Start();
         }
-        private void timer1_Tick(object sender, EventArgs e)
+        private void refreshTemp()
         {
-            String temp = "";
-            foreach (var hardwareItem in thisComputer.Hardware)
+            for (; ; )
             {
-                if (hardwareItem.HardwareType == HardwareType.CPU)
+                String temp = "";
+                foreach (var hardwareItem in thisComputer.Hardware)
                 {
-                    hardwareItem.Update();
-                    foreach (IHardware subHardware in hardwareItem.SubHardware)
-                        subHardware.Update();
-                    foreach (var sensor in hardwareItem.Sensors)
+                    if (hardwareItem.HardwareType == HardwareType.CPU)
                     {
-                        if (sensor.SensorType == SensorType.Temperature)
+                        hardwareItem.Update();
+                        foreach (IHardware subHardware in hardwareItem.SubHardware)
+                            subHardware.Update();
+                        foreach (var sensor in hardwareItem.Sensors)
                         {
-                            temp += String.Format("{0} Temperature = {1}\r\n", sensor.Name, sensor.Value.HasValue ? sensor.Value.Value.ToString() : "No value");
+                            if (sensor.SensorType == SensorType.Temperature)
+                            {
+                                temp += String.Format(sensor.Name+" = "+ (sensor.Value.HasValue ? sensor.Value.Value.ToString() : "No value") + "\r\n");
+                            }
                         }
                     }
                 }
+                this.InvokeEx(f => output.Text = temp);
+                Thread.Sleep(1000);
             }
-            label1.Text = temp;
+        }
+
+        private void Window_FormClosed(object sender, FormClosedEventArgs e)
+        {
+            Environment.Exit(0);
+        }
+    }
+    public static class ISynchronizeInvokeExtensions
+    {
+        public static void InvokeEx<T>(this T @this, Action<T> action) where T : ISynchronizeInvoke
+        {
+            try
+            {
+                if (@this.InvokeRequired)
+                {
+                    @this.Invoke(action, new object[] { @this });
+                }
+                else
+                {
+                    action(@this);
+                }
+            }
+            catch (Exception) { }
         }
     }
 }
