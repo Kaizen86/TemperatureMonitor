@@ -7,14 +7,40 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using OpenHardwareMonitor;
+using OpenHardwareMonitor.Hardware;
 
 namespace TemperatureMonitor
 {
     public partial class Window : Form
     {
+        Computer thisComputer;
         public Window()
         {
             InitializeComponent();
+            thisComputer = new Computer() { CPUEnabled = true };
+            thisComputer.Open();
+        }
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            String temp = "";
+            foreach (var hardwareItem in thisComputer.Hardware)
+            {
+                if (hardwareItem.HardwareType == HardwareType.CPU)
+                {
+                    hardwareItem.Update();
+                    foreach (IHardware subHardware in hardwareItem.SubHardware)
+                        subHardware.Update();
+                    foreach (var sensor in hardwareItem.Sensors)
+                    {
+                        if (sensor.SensorType == SensorType.Temperature)
+                        {
+                            temp += String.Format("{0} Temperature = {1}\r\n", sensor.Name, sensor.Value.HasValue ? sensor.Value.Value.ToString() : "No value");
+                        }
+                    }
+                }
+            }
+            label1.Text = temp;
         }
     }
 }
