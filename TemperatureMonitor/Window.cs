@@ -34,7 +34,14 @@ namespace TemperatureMonitor
                         {
                             if (sensor.SensorType == SensorType.Temperature)
                             {
-                                temp += String.Format(sensor.Name+" = "+ (sensor.Value.HasValue ? sensor.Value.Value.ToString() : "No value") + "\r\n");
+                                //logic for converting to celsius if the farenheight is unchecked.
+                                string tmp;
+                                if (farenheight.Checked) { tmp = sensor.Value.Value.ToString(); }
+                                else { tmp = (sensor.Value.Value / 1.8).ToString(); }
+                                int index = tmp.IndexOf(".");
+                                if (!(index == -1)) { tmp = tmp.Substring(0, Math.Min(tmp.Length, index)); }
+
+                                temp += String.Format(sensor.Name+": "+ tmp + "\r\n");
                             }
                         }
                     }
