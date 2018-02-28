@@ -27,7 +27,7 @@ namespace TemperatureMonitor
                 {
                     if (hardwareItem.HardwareType == HardwareType.CPU)
                     {
-                        hardwareItem.Update();
+                        hardwareItem.Update(); 
                         foreach (IHardware subHardware in hardwareItem.SubHardware)
                             subHardware.Update();
                         foreach (var sensor in hardwareItem.Sensors)
